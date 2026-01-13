@@ -1,2 +1,67 @@
-# My_Projects
-Central portfolio repository documenting my DevOps projects
+# DevOps Projects Portfolio
+
+This repository is a central portfolio showcasing my hands-on DevOps projects.
+It highlights cloud infrastructure deployment, CI/CD automation, security best practices, and documentation.
+
+---
+
+## 🔹 Project 1: AWS EC2 Apache Deployment
+
+### Overview
+Deployed a static website on AWS EC2 using Amazon Linux 2023 and Apache HTTP Server, with proper network security configuration.
+
+### Key Concepts
+- AWS EC2
+- Security Groups
+- Linux administration
+- Apache HTTP Server
+
+### What I Did
+- Secured AWS root account and used IAM for daily access
+- Launched and configured an EC2 instance
+- Configured SSH and HTTP access via security groups
+- Installed and enabled Apache
+- Deployed and verified a custom website
+
+### Repository
+🔗 https://github.com/Faizan3456/aws-ec2-apache-deployment
+
+---
+
+## 🔹 Project 2: CI/CD Deployment to AWS EC2
+
+### Overview
+Built a CI/CD pipeline using GitHub Actions to automatically deploy website updates to an AWS EC2 instance on every commit.
+
+### Key Concepts
+- GitHub Actions
+- CI/CD pipelines
+- SSH-based deployment
+- GitHub Secrets
+- AWS EC2
+
+### What I Did
+- Created a GitHub Actions workflow
+- Stored credentials securely using GitHub Secrets
+- Automated deployment of website files to EC2
+- Restarted Apache automatically
+- Verified live updates after each commit
+
+### Repository
+🔗 https://github.com/Faizan3456/aws-ec2-cicd-website
+
+---
+
+## 🧠 Skills Demonstrated
+- AWS infrastructure fundamentals
+- Linux server management
+- Web server configuration
+- CI/CD automation
+- Secure credential handling
+- Technical documentation
+
+---
+
+## 📌 About Me
+I am building hands-on DevOps experience by designing, deploying, automating, and documenting real-world infrastructure and deployment workflows.
+My focus is on automation, reliability, and security.
