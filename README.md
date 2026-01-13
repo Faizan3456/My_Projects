@@ -98,12 +98,38 @@ The project automates EC2 creation, security group configuration, Apache install
 
 ---
 
+## 🔹 Project 4: AWS EC2 Deployment Behind Application Load Balancer (Terraform)
+
+### Overview
+Provisioned a highly available AWS web architecture using **Terraform (Infrastructure as Code)** by deploying multiple EC2 instances behind an **Application Load Balancer (ALB)**.
+
+### Key Concepts
+- Application Load Balancer (ALB)
+- Target Groups and Health Checks
+- Multi-EC2 architecture
+- Infrastructure as Code (Terraform)
+- Secure networking (Security Groups)
+
+### What I Did
+- Designed Terraform configuration to provision ALB and EC2 resources
+- Deployed multiple EC2 instances running Apache HTTP Server
+- Configured security groups to control traffic flow between ALB and instances
+- Implemented target groups with health checks
+- Verified load balancing by observing traffic distribution across instances
+- Managed the complete infrastructure lifecycle using Terraform
+
+### Repository
+🔗 https://github.com/Faizan3456/aws-terraform-ec2-alb
+
+---
+
 ## 🧠 Skills Demonstrated
 - AWS infrastructure fundamentals
 - Linux server management
 - Web server configuration
 - CI/CD automation
 - Infrastructure as Code (Terraform)
+- Load balancing and high availability
 - Secure credential handling
 - Cloud security best practices
 - Technical documentation
