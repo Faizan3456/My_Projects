@@ -1,7 +1,26 @@
 # DevOps Projects Portfolio
 
-This repository is a central portfolio showcasing my hands-on DevOps projects.
+This repository is a central portfolio showcasing my hands-on DevOps projects.  
 It highlights cloud infrastructure deployment, CI/CD automation, security best practices, and documentation.
+
+---
+
+## Extended Description
+
+This portfolio documents my hands-on journey into DevOps by building, deploying, and automating real infrastructure on AWS.
+Rather than relying only on theory, these projects focus on practical implementation, security awareness, and automation.
+
+The work begins with manual cloud infrastructure provisioning to establish a strong foundation in AWS, Linux systems, and web server configuration.
+It then progresses to CI/CD automation using GitHub Actions, demonstrating how manual deployment processes can be transformed into reliable and repeatable pipelines.
+
+Across these projects, I apply core DevOps principles such as:
+- Infrastructure ownership and responsibility
+- Automation of repetitive tasks
+- Secure handling of credentials and access
+- Clear and maintainable documentation
+- Verification of deployments through real-world testing
+
+This repository serves as a central index, while each linked repository contains detailed technical implementation and supporting evidence.
 
 ---
 
