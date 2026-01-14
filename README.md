@@ -1,4 +1,4 @@
-# DevOps Projects Portfolio
+# DevOps/SRE Projects Portfolio
 
 This repository is a central portfolio showcasing my hands-on DevOps projects.  
 It highlights cloud infrastructure deployment, CI/CD automation, security best practices, and clear technical documentation.
@@ -135,6 +135,44 @@ Provisioned a highly available AWS web architecture using **Terraform (Infrastru
 - Technical documentation
 
 ---
+## 🔹 Project 5: IBM MQ SRE Lab on AWS (Sender / Receiver, Monitoring & Automation)
+
+### Overview
+Designed and implemented a **production-style IBM MQ sender/receiver topology** on AWS EC2 using Docker, with a strong focus on **Site Reliability Engineering (SRE)** practices, including secure channel authentication (CHLAUTH), proactive monitoring, automation, and incident simulation.
+
+This project goes beyond basic MQ setup and demonstrates how messaging platforms are **operated, monitored, and recovered** in real enterprise environments.
+
+### Key Concepts
+- IBM MQ (Sender / Receiver Queue Managers)
+- MQ Channels, XMITQs, Remote and Local Queues
+- CHLAUTH (Channel Authentication) security
+- AWS EC2 networking (private IP communication)
+- Docker-based MQ deployment
+- Split-horizon monitoring design
+- systemd-based automation
+- Incident response and runbooks
+
+### What I Did
+- Deployed IBM MQ Queue Managers in Docker containers on separate AWS EC2 instances
+- Designed a sender/receiver messaging flow using:
+  - Sender QM with remote queue and transmission queue
+  - Receiver QM with local queue and TCP listener
+- Diagnosed and resolved **channel authentication failures** caused by default CHLAUTH rules
+- Implemented least-privilege CHLAUTH rules using `ADDRESSMAP` to securely allow sender connections
+- Built **split-horizon monitoring**:
+  - Sender-side monitoring of XMITQ backlog depth with OK / WARN / CRIT thresholds
+  - Receiver-side monitoring of listener and channel availability
+- Automated monitoring execution using **systemd timers** instead of cron
+- Simulated real production incidents (“game day”) by:
+  - Stopping listeners and channels
+  - Injecting message backlogs
+  - Observing alerts and queue growth
+  - Performing controlled recovery and validation
+- Documented operational **runbooks**, captured evidence, and validated recovery to steady state
+
+### Repository
+🔗 https://github.com/Faizan3456/ibm-mq-sre-lab
+
 
 ## 📌 About Me
 I am building hands-on DevOps experience by designing, deploying, automating, and documenting real-world infrastructure and deployment workflows.  
