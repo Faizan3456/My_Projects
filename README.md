@@ -174,6 +174,47 @@ This project goes beyond basic MQ setup and demonstrates how messaging platforms
 🔗 https://github.com/Faizan3456/ibm-mq-sre-lab
 
 
+---
+
+## 🔹 Project 6: UK Job Agent — Autonomous LinkedIn Application Bot
+
+### Overview
+An **autonomous job application bot** that searches LinkedIn, scores every job using Claude AI against a personalised MasterPrompt (skills, sponsorship rules, salary floor), tailors the CV per application, and submits — fully automatically for LinkedIn Easy Apply, semi-automatically for external ATS platforms (Workday, Greenhouse, Lever, iCIMS, etc.).
+
+Built specifically for UK Skilled Worker visa sponsorship roles in banking, payments, and infrastructure support.
+
+### Key Concepts
+- Claude AI (Haiku for fast parallel scoring, Sonnet for CV tailoring)
+- Playwright browser automation
+- LinkedIn Easy Apply automation
+- External ATS automation (Workday, Greenhouse, Lever)
+- Parallel job scoring with ThreadPoolExecutor
+- AI-generated LinkedIn search queries from CV + prompt
+- Tailored CV and cover letter generation per application
+
+### What It Does
+- **Phase 0** — Claude reads the candidate CV + MasterPrompt and generates targeted LinkedIn search queries
+- **Phase 1** — Searches LinkedIn with all queries, collects unique job URLs
+- **Phase 2** — Scrapes each job page (title, company, full description) with bot-detection avoidance
+- **Phase 3** — Scores all jobs in parallel using Claude Haiku with a weighted formula (Role 30%, Tech 25%, Sponsorship 25%, Salary 10%, Company 10%)
+- **Phase 4** — Ranks jobs, shows full breakdown table with reasons
+- **Phase 5** — For top N jobs: generates tailored CV + cover letter with Claude Sonnet, then submits via Easy Apply (fully automatic) or external ATS (auto-fills, pauses for login and review)
+
+### Scoring Formula
+| Dimension | Weight |
+|---|---|
+| Role Alignment | 30% |
+| Technology Match | 25% |
+| Sponsorship Probability | 25% |
+| Salary Probability | 10% |
+| Company Quality | 10% |
+
+Apply if score ≥ 60. Hard skip if sponsorship explicitly unavailable, salary below £45,000, or role outside the UK.
+
+### Repository
+🔗 https://github.com/Faizan3456/UK-Job-Agent
+
+
 ## 📌 About Me
 I am building hands-on DevOps experience by designing, deploying, automating, and documenting real-world infrastructure and deployment workflows.  
 My focus is on automation, reliability, and security.
