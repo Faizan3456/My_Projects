@@ -1,174 +1,473 @@
-# UK Job Agent 🤖
+# UK Job Agent — DIY Auto-Apply System
 
-An autonomous LinkedIn job application bot for UK Skilled Worker visa sponsorship roles. It searches LinkedIn, scores every job against your CV and preferences using Claude AI, tailors your CV per application, and submits — fully automatically for Easy Apply, semi-automatically for external ATS (Workday, Greenhouse, Lever, etc.).
-
----
-
-## How It Works
-
-```
-Phase 0  →  Claude reads your CV + MasterPrompt → generates targeted search queries
-Phase 1  →  Searches LinkedIn with those queries, collects job URLs
-Phase 2  →  Scrapes each job page (title, company, description)
-Phase 3  →  Scores all jobs in parallel with Claude Haiku (fast + cheap)
-Phase 4  →  Ranks jobs, shows table — applies to top N automatically
-Phase 5  →  Easy Apply: fully automatic
-             External ATS: auto-fills, pauses for your login + final review
-```
+An autonomous job application bot that finds visa-sponsor positions on LinkedIn and auto-fills ATS forms. Built as a modular 3-script system inspired by AIApply.
 
 ---
 
-## Project Structure
+## Architecture
 
 ```
-UKJobAgent/
-├── hunt.py                  # Main script — full autonomous hunt + apply
-├── apply_job.py             # Apply to a single job URL
-├── auto_apply.py            # Job queue engine (CSV-based pipeline)
-├── linkedin_apply.py        # LinkedIn Easy Apply automation module
-├── linkedin_scraper.py      # LinkedIn job scraper (standalone)
-├── linkedin_test.py         # One-time login to save browser session
-├── MasterPrompt.txt         # Your job preferences, scoring rules, sponsorship logic
-├── Faizan_Fayyaz_KYNDRYL.pdf  # Your CV (source of truth)
-├── .env                     # API keys and config (not committed)
-├── jobs_queue.csv           # Job queue (used by auto_apply.py)
-├── applications.csv         # Log of all submitted applications
-├── tailored_cvs/            # Generated tailored CVs per application
-└── hunt_results/            # Ranked job CSVs from each hunt run
+┌─────────────────┐
+│  profile.json   │  Personal data (name, email, phone, CV, credentials)
+└────────┬────────┘
+         │
+┌────────▼──────────┐
+│   find_jobs.py    │  Scrapes LinkedIn → jobs_queue.csv
+└────────┬──────────┘
+         │
+┌────────▼──────────┐
+│    apply.py       │  Reads queue, applies one job at a time
+└─────────────────┘
 ```
 
 ---
 
 ## Setup
 
-### 1. Install dependencies
+### 1. Prerequisites
 
 ```bash
-python -m pip install playwright pdfplumber python-docx docx2pdf requests python-dotenv
-python -m playwright install chromium
+pip install playwright pdfplumber requests
+playwright install chromium
 ```
 
-### 2. Create `.env` file
+### 2. LinkedIn Login
 
-```env
-CLAUDE_API_KEY=your_anthropic_api_key_here
-CV_PATH=Faizan_Fayyaz_KYNDRYL.pdf
-LINKEDIN_PROFILE_DIR=./linkedin_profile
-```
-
-### 3. Log in to LinkedIn once
+Run once to log in and save session:
 
 ```bash
-python linkedin_test.py
+python3 linkedin_test.py
 ```
 
-Log in manually in the browser that opens, then press Enter. Your session is saved to `linkedin_profile/` — you won't need to log in again.
+This creates `./linkedin_profile/` with your saved LinkedIn session.
+
+### 3. Profile Configuration
+
+Edit `profile.json` with your details:
+
+```json
+{
+  "name": "Your Name",
+  "email": "your@email.com",
+  "phone": "+44...",
+  "address": "City, Country",
+  "cv_path": "Your_CV.pdf",
+  "right_to_work": "Yes",
+  "requires_sponsorship": "Yes",
+  "linkedin_email": "your@linkedin.com",
+  "linkedin_password": "your_password",
+  "ats_password": "your_ats_form_password"
+}
+```
+
+### 4. CV Setup
+
+Place your CV as PDF in the project folder. Update `cv_path` in `profile.json` to match.
 
 ---
 
 ## Usage
 
-### Full autonomous hunt (recommended)
+### Find Jobs
+
+Search LinkedIn for matching positions:
 
 ```bash
-python hunt.py
+# Search all major sponsors
+python3 find_jobs.py
+
+# Search one company
+python3 find_jobs.py --company Barclays --limit 10
+
+# Dry run (don't add to queue)
+python3 find_jobs.py --company "HSBC" --headless
 ```
 
-Searches LinkedIn, scores all jobs, applies to top 20 automatically.
+Creates/appends to `jobs_queue.csv`:
+```
+url,title,company,status
+https://linkedin.com/jobs/view/12345,Application Support Engineer,Barclays,pending
+```
+
+### Apply to Jobs
+
+Read queue and apply one-by-one:
 
 ```bash
-python hunt.py --score-only          # Score and rank, don't apply yet
-python hunt.py --top 10              # Apply to top 10 instead of 20
-python hunt.py --min-score 65        # Only apply if score >= 65 (default: 60)
-python hunt.py --limit 25            # Collect more jobs per search term
-python hunt.py --searches 30         # Generate 30 search queries instead of 20
+# Dry run (see what will happen)
+python3 apply.py --dry-run --one
+
+# Apply to 1 job (real)
+python3 apply.py --one
+
+# Apply to all pending jobs
+python3 apply.py
+
+# Headless mode (no visible browser window)
+python3 apply.py --headless
 ```
 
-### Apply to a single job
-
-```bash
-python apply_job.py "https://www.linkedin.com/jobs/view/1234567890"
-python apply_job.py "https://www.linkedin.com/jobs/view/1234567890" --dry-run   # analyse only
-python apply_job.py "https://www.linkedin.com/jobs/view/1234567890" --skip-cv   # use original CV
-```
+Updates queue status: `pending` → `applied` or `failed`
 
 ---
 
-## Scoring Formula
-
-Defined in `MasterPrompt.txt` — Claude scores each job on five dimensions:
-
-| Dimension | Weight |
-|---|---|
-| Role Alignment | 30% |
-| Technology Match | 25% |
-| Sponsorship Probability | 25% |
-| Salary Probability | 10% |
-| Company Quality | 10% |
-
-**APPLY** if final score ≥ 60. **SKIP** otherwise.
-
-Hard skips regardless of score:
-- "No sponsorship", "cannot sponsor", "right to work required"
-- Salary clearly below £45,000
-- Outside United Kingdom
-- Excluded companies (Citi, Morgan Stanley)
-
----
-
-## What Happens Per Application
+## Supported Job Boards
 
 ### LinkedIn Easy Apply
-Fully automatic — no input needed:
-1. Clicks Easy Apply
-2. Uploads tailored CV (generated per job)
-3. Fills all form fields (phone, salary, notice period, work auth, sponsorship)
-4. Clicks Next → Review → Submit
+- ✅ Auto-fills multi-step form
+- ✅ Auto-uploads CV
+- ✅ Auto-answers "Do you have right to work?" questions
+- ⚠️ May timeout on slow pages
 
-### External ATS (Workday, Greenhouse, Lever, iCIMS, etc.)
-Semi-automatic — two pauses:
-1. **Login pause** — if the ATS shows a login page, it pauses and waits for you to log in
-2. **Review pause** — before final Submit, pauses so you can check the filled form
-3. Type `skip` at either pause to move to the next job
-
----
-
-## CV Tailoring
-
-For every job that passes scoring, Claude Sonnet:
-- Rewrites the professional summary for that specific role
-- Rewrites key achievement bullets to match the job description keywords
-- Generates a tailored cover letter
-- Highlights the most relevant skills
-
-The tailored CV is saved as a DOCX (and PDF if Microsoft Word is available) in `tailored_cvs/`.
+### External ATS Platforms
+- **Workday** — Detects and fills form fields automatically
+- **Greenhouse** — Supported
+- **Lever** — Supported
+- **SmartRecruiters** — Supported
+- **iCIMS** — Supported
+- **Generic** — Attempts to fill common patterns
 
 ---
 
-## Logs
+## Configuration
 
-- **`applications.csv`** — every application with timestamp, company, title, score, status, CV path
-- **`hunt_results/ranked_YYYYMMDD_HHMM.csv`** — full ranked list from each run including all scores and reasons
+### Sponsor Companies (with LinkedIn IDs)
+
+Edit `find_jobs.py` to add more:
+
+```python
+LINKEDIN_COMPANY_IDS = {
+    "HSBC": "1557",
+    "Barclays": "3529",
+    "Lloyds Banking Group": "7116",
+    # Add more...
+}
+```
+
+### Role Keywords
+
+In `find_jobs.py`, customize search terms:
+
+```python
+role_kws = [
+    "Application Support Engineer",
+    "Application Support Analyst",
+    "Technical Support Engineer",
+    # Add your target roles
+]
+```
+
+### Hard Filters
+
+Edit regex patterns in `find_jobs.py` to skip jobs:
+
+```python
+_TITLE_BLOCKLIST = re.compile(r"\b(devops|sre|cloud engineer)\b", re.IGNORECASE)
+_NO_SPONSORSHIP = re.compile(r"(no sponsorship|right to work required)", re.IGNORECASE)
+_SECURITY_CLEARANCE = re.compile(r"(sc clear|dv clear)", re.IGNORECASE)
+```
 
 ---
 
-## MasterPrompt
+## Outputs
 
-`MasterPrompt.txt` controls everything:
-- Which roles to target (Application Support, Production Support, SWIFT, etc.)
-- Which companies to prioritise (HSBC, Barclays, Kyndryl, Accenture, etc.)
-- Which to exclude (Citi, Morgan Stanley)
-- Sponsorship rules
-- Salary minimum (£45,000)
-- Scoring weights
+### Logs
 
-Edit this file to change your job search strategy — no code changes needed.
+- **`jobs_queue.csv`** — Job queue with status (pending/applied/failed)
+- **`applications.csv`** — Full application log with timestamps and ATS type
+- **`hunt_results/`** — Detailed results from scoring runs
+
+### ATS Accounts
+
+New accounts created during applications are saved to:
+- **`ats_accounts.csv`** — Domain, email, password, timestamp
 
 ---
 
-## Requirements
+## Known Issues & Errors Handled
 
-- Python 3.9+
-- Anthropic API key (Claude)
-- LinkedIn account
-- macOS / Linux (Windows untested)
+### 1. **Browser Profile Locked** ❌
+
+**Error:** `Opening in existing browser session` or `SingletonLock` issues
+
+**Cause:** Previous Chrome process wasn't cleanly killed
+
+**Fix (automatic):** Scripts kill Chrome before launch:
+```bash
+pkill -9 -f "Google Chrome for Testing"
+pkill -9 -f "chrome for testing"
+sleep 2
+rm -f ./linkedin_profile/SingletonLock
+rm -f ./linkedin_profile/SingletonSocket
+rm -f ./linkedin_profile/SingletonCookie
+```
+
+**Status:** ✅ **Handled** — All scripts auto-kill Chrome and remove locks on startup
+
+---
+
+### 2. **Not Logged Into LinkedIn** ❌
+
+**Error:** `Page.goto` redirects to `linkedin.com/login`
+
+**Cause:** Session expired or `linkedin_profile/` directory deleted
+
+**Fix:**
+```bash
+python3 linkedin_test.py  # Re-login
+```
+
+**Status:** ✅ **Handled** — Scripts detect login redirect and exit gracefully
+
+---
+
+### 3. **Job Scraper Returns 0 Results** ❌
+
+**Error:** Found 0 jobs even for known sponsors
+
+**Cause:**
+- LinkedIn algorithm limited results
+- Company ID not found in `LINKEDIN_COMPANY_IDS`
+- Search terms too narrow
+- Rate-limited by LinkedIn
+
+**Fix:**
+```bash
+# Try different role keywords
+python3 find_jobs.py --company Barclays
+
+# Try generic search (no company filter)
+python3 find_jobs.py
+
+# Add delay between searches (default: 0.5-1.5s)
+```
+
+**Status:** ✅ **Handled** — Returns gracefully if no jobs found; no crash
+
+---
+
+### 4. **ATS Form Filling Fails** ⚠️
+
+**Error:** `✗ FAILED` on apply attempt
+
+**Cause:**
+- Form selectors changed (LinkedIn updates HTML frequently)
+- ATS not recognized
+- Required fields not found
+- File upload timeout
+
+**Status:** ⚠️ **Partially Handled** — Detects failures but form selectors need manual tuning
+
+**Debug:**
+```bash
+# Run with visible browser to watch form filling
+python3 apply.py --one  # (no --headless)
+```
+
+---
+
+### 5. **LinkedIn Easy Apply Timeout** ❌
+
+**Error:** Form step takes >30s to load
+
+**Cause:**
+- LinkedIn server slow
+- Page has heavy JS
+- Network latency
+
+**Status:** ✅ **Handled** — Timeout set to 15s; increased to 60s on retry
+
+---
+
+### 6. **Rate Limiting / Bot Detection** ⚠️
+
+**Symptoms:**
+- Searches return 0 results on 2nd+ runs
+- LinkedIn shows "unusual activity" warning
+- CAPTCHA appears
+
+**Cause:** Too many requests in short time
+
+**Status:** ⚠️ **Partially Handled** — Random delays (0.5-1.5s) between searches; no proxy rotation yet
+
+**Fix:**
+```bash
+# Increase delays manually
+# Edit find_jobs.py:  _delay(0.5, 1.0) → _delay(3.0, 5.0)
+# Run less frequently (daily, not continuous)
+```
+
+---
+
+### 7. **CV Upload Not Triggering Autofill** ⚠️
+
+**Symptom:** ATS accepts CV but doesn't auto-fill fields
+
+**Cause:** Some ATS require form interaction before parsing CV
+
+**Status:** ✅ **Handled** — Wait 2-3s after upload before filling fields
+
+---
+
+### 8. **Workday "Unauthorized" After Registration** ❌
+
+**Error:** Login fails even with correct password after account creation
+
+**Cause:** Workday doesn't accept auto-filled passwords on first login
+
+**Status:** ⚠️ **Workaround Available** — Can pause for manual login with `input()` prompt
+
+---
+
+### 9. **Duplicate Applications** ⚠️
+
+**Symptom:** Same job applied twice
+
+**Cause:**
+- Job URL formats differ (utm params, job ID vs full URL)
+- Dedup cache corrupted
+
+**Status:** ✅ **Handled** — Dedup by full URL + bare job ID (numeric)
+
+---
+
+### 10. **CSV Header Mismatch** ❌
+
+**Error:** `KeyError: 'url'` when reading `jobs_queue.csv`
+
+**Cause:** Manually edited CSV, removed headers, or file corrupted
+
+**Status:** ✅ **Handled** — Scripts tolerate missing headers; recreate if needed:
+```bash
+rm jobs_queue.csv
+python3 find_jobs.py --company Barclays --limit 5
+```
+
+---
+
+### 11. **Playwright Timeout on Page Load** ❌
+
+**Error:** `Page.goto: Target page, context or browser has been closed`
+
+**Cause:** Browser crashed mid-navigation
+
+**Status:** ✅ **Handled** — Try/except wraps all page navigation; logs error and skips job
+
+---
+
+### 12. **"Element Not Interactable" on Form Field** ❌
+
+**Error:** Click/fill fails — element exists but not visible/enabled
+
+**Cause:**
+- Element hidden behind modal
+- Page still loading
+- Element visibility set to `display: none`
+
+**Status:** ✅ **Handled** — Locators include wait states; retry on failure
+
+---
+
+### 13. **File Upload Selector Mismatch** ❌
+
+**Error:** CV upload fails; `input[type=file]` not found
+
+**Cause:** ATS uses custom upload widget (not standard HTML input)
+
+**Status:** ⚠️ **Partially Handled** — Standard input selector works for Workday/Greenhouse; custom ATS need manual fixes
+
+---
+
+### 14. **Screening Questions Not Answered** ⚠️
+
+**Symptom:** Form validation fails; "Sponsorship" field required
+
+**Cause:** Question text doesn't match regex patterns
+
+**Status:** ✅ **Handled** — Regex patterns cover common variations:
+- "right to work", "eligible to work", "need sponsorship", "visa sponsorship"
+- Answer: Always "Yes"
+
+---
+
+### 15. **LinkedIn Profile Corruption** ❌
+
+**Error:** Scripts behave oddly; session acts logged-out despite valid creds
+
+**Cause:** `./linkedin_profile/` directory partially deleted or corrupted
+
+**Status:** ✅ **Handled** — Run `python3 linkedin_test.py` to refresh session
+
+---
+
+## Potential Future Errors
+
+### 16. **LinkedIn Blocks Persistent Context** 🚀
+
+**Risk Level:** Medium (LinkedIn periodically hardens bot detection)
+
+**Mitigation:**
+- [ ] Add proxy rotation
+- [ ] Vary user agent per session
+- [ ] Add random delays (already done)
+- [ ] Monitor for CAPTCHA, pause if detected
+- [ ] Switch to Chrome extension approach (manual for now)
+
+---
+
+### 17. **ATS Requires Email Verification** 🚀
+
+**Risk Level:** Medium (many ATS send verification links)
+
+**Mitigation:**
+- [ ] Parse verification email from Gmail API
+- [ ] Click link automatically
+- [ ] Or pause for user to verify manually
+
+---
+
+### 18. **Security Clearance Bypass Attempts** 🚀
+
+**Risk Level:** High (applying for SC/DV jobs violates UK law if you don't qualify)
+
+**Mitigation:**
+- [ ] Regex blocks SC/DV in descriptions (already done)
+- [ ] BPSS allowed (you qualify with 3+ years UK residency)
+- [ ] Never auto-answer clearance questions
+
+---
+
+## Troubleshooting Checklist
+
+Before running, verify:
+
+- [ ] LinkedIn logged in? `python3 linkedin_test.py`
+- [ ] `profile.json` correct? Check all fields, especially CV path
+- [ ] CV file exists? `ls Faizan_Fayyaz_KYNDRYL.pdf`
+- [ ] Python packages installed? `pip list | grep -E "playwright|pdfplumber"`
+- [ ] Chrome not running? `pkill -9 chromium`
+- [ ] Browser profile not locked? `ls ./linkedin_profile/SingletonLock`
+- [ ] Queue file valid? `head -2 jobs_queue.csv`
+- [ ] Run without `--headless` to watch browser?
+
+---
+
+## License
+
+MIT
+
+---
+
+## Author
+
+Faizan Fayyaz — Senior IT Infrastructure Engineer, Portsmouth UK
+
+---
+
+## Support
+
+For issues, check the **Known Issues & Errors Handled** section above first.
+
+For LinkedIn authentication: `python3 linkedin_test.py`
+
+For ATS form issues: Inspect with browser DevTools, update selectors in `apply.py`
