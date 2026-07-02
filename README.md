@@ -215,6 +215,21 @@ Apply if score ≥ 60. Hard skip if sponsorship explicitly unavailable, salary b
 🔗 https://github.com/Faizan3456/UK-Job-Agent
 
 
+---
+
+## 🔹 Open Source Contributions — Red Hat OpenShift
+
+Contributed to production Go repositories maintained by Red Hat as part of the OpenShift platform.
+
+| Repo | PR | Description | Status |
+|---|---|---|---|
+| [openshift/assisted-service](https://github.com/openshift/assisted-service) | [#10486](https://github.com/openshift/assisted-service/pull/10486) | Updated `golang.org/x/crypto` from v0.46.0 to v0.53.0 to address security vulnerabilities | Open |
+| [openshift/rosa](https://github.com/openshift/rosa) | [#3278](https://github.com/openshift/rosa/pull/3278) | Updated `golang.org/x/crypto` from v0.46.0 to v0.53.0 to address security vulnerabilities | Closed (handled by Renovate bot) |
+
+**Skills demonstrated:** Go dependency management, open source contribution workflow, git rebase, PR review process, CI/CD pipelines (Prow, Red Hat Konflux).
+
+---
+
 ## 📌 About Me
 I am building hands-on DevOps experience by designing, deploying, automating, and documenting real-world infrastructure and deployment workflows.  
 My focus is on automation, reliability, and security.
