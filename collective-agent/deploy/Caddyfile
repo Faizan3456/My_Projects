@@ -1,0 +1,36 @@
+# Caddy terminates TLS and is the only thing exposed to the internet.
+# Certificates are obtained and renewed automatically from Let's Encrypt, which
+# requires the DNS A record to resolve to this host and ports 80/443 to be open.
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	# The API lives under /api on the same origin as the dashboard, so browsers
+	# never make a cross-origin request and no CORS relaxation is needed.
+	handle /api/* {
+		uri strip_prefix /api
+		reverse_proxy backend:8000
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Entra sign-in redirects to login.microsoftonline.com and the SPA talks
+		# only to its own origin.
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://login.microsoftonline.com; frame-src https://login.microsoftonline.com; img-src 'self' data:; base-uri 'self'; form-action 'self' https://login.microsoftonline.com"
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

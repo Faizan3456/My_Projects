@@ -35,3 +35,10 @@ jobagent/
 # macOS
 .DS_Store
 *.bak
+
+# Personal data — must never reach a public repo
+profile.json
+.applied_urls.json
+jobs_queue.csv
+linkedin_session*
+*.pdf

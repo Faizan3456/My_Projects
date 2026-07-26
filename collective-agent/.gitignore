@@ -1,0 +1,8 @@
+.env
+deploy/.env.prod
+
+# Terraform: provider binaries are hundreds of MB, state holds live infra details
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan

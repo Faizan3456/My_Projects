@@ -1,0 +1,53 @@
+#cloud-config
+# Runs once on first boot. Gets the host to the point where deploy.sh works:
+# Docker installed, firewall closed except SSH/HTTP/HTTPS, /opt/collective ready.
+package_update: true
+package_upgrade: true
+
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - rsync
+  - ufw
+  - unattended-upgrades
+
+write_files:
+  - path: /etc/apt/keyrings/.keep
+    content: ""
+
+runcmd:
+  # --- Docker from the official repository ---
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - >
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc]
+    https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable"
+    > /etc/apt/sources.list.d/docker.list
+  - apt-get update -qq
+  - >
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq
+    docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable --now docker
+  # Let the admin user run docker without sudo, which deploy.sh relies on.
+  - usermod -aG docker azureuser
+
+  # --- Firewall. Azure's NSG is the outer gate; this is the inner one. ---
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable
+
+  # --- Where deploy.sh puts the project ---
+  - mkdir -p /opt/collective
+  - chown azureuser:azureuser /opt/collective
+
+  # --- A 1 GiB swap file: 2 GiB of RAM plus a docker build can get tight ---
+  - fallocate -l 1G /swapfile
+  - chmod 600 /swapfile
+  - mkswap /swapfile
+  - swapon /swapfile
+  - echo '/swapfile none swap sw 0 0' >> /etc/fstab
+
+  - touch /var/log/collective-cloud-init-done
